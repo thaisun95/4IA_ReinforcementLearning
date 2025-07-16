@@ -16,14 +16,11 @@ class GridWorld:
         self.n_cols = n_cols
         self.state = start_state
         self.start_state = start_state
-        # Terminal states: list of (row, col). Default: bottom-right corner.
         if terminal_states is None:
             self.terminal_states = [(n_rows-1, n_cols-1)]
         else:
             self.terminal_states = terminal_states
-        # Actions: 0=up, 1=down, 2=left, 3=right
-        self.action_space = [0, 1, 2, 3]
-        # Set rewards: default -1 everywhere, +1 in terminal state
+        self.action_space = [0, 1, 2, 3]  # up, down, left, right
         if reward_matrix is None:
             self.reward_matrix = -np.ones((n_rows, n_cols))
             for t in self.terminal_states:
@@ -32,74 +29,29 @@ class GridWorld:
             self.reward_matrix = reward_matrix
 
     def state_to_index(self, state):
-        """
-        Convert a (row, col) tuple to a single state index.
-        Args:
-            state (tuple): (row, col)
-        Returns:
-            int: state index
-        """
         row, col = state
         return row * self.n_cols + col
 
     def index_to_state(self, index):
-        """
-        Convert a single state index to a (row, col) tuple.
-        Args:
-            index (int): state index
-        Returns:
-            tuple: (row, col)
-        """
         row = index // self.n_cols
         col = index % self.n_cols
         return (row, col)
 
     @property
     def n_states(self):
-        """Total number of states."""
         return self.n_rows * self.n_cols
 
     def reset(self):
-        """
-        Reset the environment to the initial state.
-        Returns:
-            tuple: Initial state (row, col).
-        """
         self.state = self.start_state
         return self.state
 
     def is_terminal(self, state):
-        """
-        Check if a state is terminal.
-        Args:
-            state (tuple): State as (row, col).
-        Returns:
-            bool: True if state is terminal.
-        """
         return state in self.terminal_states
 
     def get_reward(self, state):
-        """
-        Get the reward for entering a given state.
-        Args:
-            state (tuple): State as (row, col).
-        Returns:
-            float: Reward.
-        """
         return self.reward_matrix[state]
 
     def step(self, action):
-        """
-        Take an action in the environment.
-
-        Args:
-            action (int): 0=up, 1=down, 2=left, 3=right
-
-        Returns:
-            next_state (tuple): Next state (row, col).
-            reward (float): Reward for the transition.
-            done (bool): Whether the next state is terminal.
-        """
         if self.is_terminal(self.state):
             return self.state, self.get_reward(self.state), True
 
@@ -125,14 +77,58 @@ class GridWorld:
         self.state = next_state
         return next_state, reward, done
 
+    def simulate_step(self, state, action):
+        """
+        Simulate a step from a given state and action, without modifying the internal state.
+        Returns next_state, reward, done.
+        """
+        row, col = state
+        if self.is_terminal(state):
+            return state, self.get_reward(state), True
+        if action == 0:
+            next_row, next_col = max(row - 1, 0), col
+        elif action == 1:
+            next_row, next_col = min(row + 1, self.n_rows - 1), col
+        elif action == 2:
+            next_row, next_col = row, max(col - 1, 0)
+        elif action == 3:
+            next_row, next_col = row, min(col + 1, self.n_cols - 1)
+        else:
+            raise ValueError("Invalid action (0=up, 1=down, 2=left, 3=right)")
+        next_state = (next_row, next_col)
+        reward = self.get_reward(next_state)
+        done = self.is_terminal(next_state)
+        return next_state, reward, done
+
     def render(self):
         """
-        Print a visual representation of the grid.
-        The agent's position is marked by 'A'.
+        Pretty print the grid with agent and terminal(s).
+        'A': Agent
+        'T': Terminal state
+        '.': Empty cell
         """
-        grid = np.array([["."]*self.n_cols for _ in range(self.n_rows)])
+        grid = np.array([["."] * self.n_cols for _ in range(self.n_rows)])
         row, col = self.state
         grid[row, col] = "A"
         for t in self.terminal_states:
-            grid[t] = "T"
+            if grid[t] != "A":
+                grid[t] = "T"
         print("\n".join(" ".join(row) for row in grid))
+        print()  # blank line for spacing
+
+    def render_policy(self, policy):
+        """
+        Visualize a policy as arrows on the grid.
+        0: up (↑), 1: down (↓), 2: left (←), 3: right (→), -1: terminal (X)
+        """
+        arrow_map = {0: "↑", 1: "↓", 2: "←", 3: "→", -1: "X"}
+        grid = np.empty((self.n_rows, self.n_cols), dtype="<U2")
+        for idx in range(self.n_states):
+            state = self.index_to_state(idx)
+            if state in self.terminal_states:
+                grid[state] = "X"
+            else:
+                grid[state] = arrow_map.get(policy[idx], "?")
+        print("Policy visualization:")
+        print("\n".join(" ".join(row) for row in grid))
+        print()

@@ -11,11 +11,14 @@ class TwoRoundRPS:
         """
         self.action_space = [0, 1, 2]  # 0=Rock, 1=Paper, 2=Scissors
         # All possible states: (round, my_first_move)
-        self.states = [(0, -1)]  # round 1, not played yet
-        self.states += [(1, a) for a in self.action_space]  # round 2, remember first move
-        self.states += [(2, a) for a in self.action_space]  # terminal states
+        self.states = [(0, -1)]
+        self.states += [(1, a) for a in self.action_space]
+        self.states += [(2, a) for a in self.action_space]
         self.n_states = len(self.states)
         self.state = (0, -1)  # initial state
+
+        # For manual play
+        self.last_opp_move = None
 
     def state_to_index(self, state):
         return self.states.index(state)
@@ -25,6 +28,7 @@ class TwoRoundRPS:
 
     def reset(self):
         self.state = (0, -1)
+        self.last_opp_move = None
         return self.state
 
     def is_terminal(self, state):
@@ -63,3 +67,46 @@ class TwoRoundRPS:
             reward = 0
             done = True
         return next_state, reward, done
+
+    def step(self, action):
+        """
+        Take an action in the environment, update self.state, return (next_state, reward, done).
+        """
+        round_id, my_first_move = self.state
+        if round_id == 0:
+            opp_move = random.choice(self.action_space)
+            self.last_opp_move = opp_move
+            reward = self.get_reward(action, opp_move)
+            next_state = (1, action)
+            done = False
+        elif round_id == 1:
+            opp_move = my_first_move
+            self.last_opp_move = opp_move
+            reward = self.get_reward(action, opp_move)
+            next_state = (2, my_first_move)
+            done = True
+        else:
+            next_state = self.state
+            reward = 0
+            done = True
+        self.state = next_state
+        return next_state, reward, done
+
+    def render(self):
+        """
+        Print a human-readable representation of the environment state.
+        """
+        move_map = {0: "Rock", 1: "Paper", 2: "Scissors", -1: "--"}
+        round_id, my_first_move = self.state
+        print(f"Round: {round_id + 1 if round_id < 2 else 'Terminal'}")
+        if round_id == 0:
+            print(f"Agent's move:    --")
+            print(f"Opponent's move: --")
+        elif round_id == 1:
+            print(f"Agent's first move: {move_map[my_first_move]}")
+            print(f"Agent's move:    --")
+            print(f"Opponent's move: -- (will be revealed after your move)")
+        else:
+            print(f"Agent's first move: {move_map[my_first_move]}")
+            print(f"Last opponent move: {move_map.get(self.last_opp_move, '--')}")
+        print()
