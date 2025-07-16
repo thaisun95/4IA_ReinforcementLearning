@@ -2,68 +2,67 @@ import numpy as np
 
 def policy_iteration(env, gamma=0.99, theta=1e-6, max_iterations=100):
     """
-    Perform Policy Iteration for a given environment.
+    Perform Policy Iteration for a generic environment with state-index mapping.
 
     Args:
-        env: The environment object (must have reset(), step(), action_space, etc).
+        env: The environment object with methods:
+            - n_states (int)
+            - action_space (list)
+            - index_to_state(idx)
+            - state_to_index(state)
+            - is_terminal(state)
+            - simulate_step(state, action)
         gamma (float): Discount factor.
         theta (float): Convergence threshold.
         max_iterations (int): Maximum number of policy improvement steps.
 
     Returns:
-        policy (np.ndarray): Optimal policy.
-        V (np.ndarray): Optimal value function.
+        policy (np.ndarray): Optimal policy (best action for each state index, -1 for terminal).
+        V (np.ndarray): Optimal value function (array of shape [n_states]).
     """
-    n_states = env.size
-    n_actions = len(env.action_space)
-    # Random initial policy: always move right (can be random)
-    policy = np.zeros(n_states, dtype=int)
-    for s in range(n_states):
-        if not env.is_terminal(s):
-            policy[s] = np.random.choice(env.action_space)
-        else:
-            policy[s] = -1
+    policy = np.random.choice(env.action_space, size=env.n_states)
+    for idx in range(env.n_states):
+        state = env.index_to_state(idx)
+        if env.is_terminal(state):
+            policy[idx] = -1  # No action for terminal states
 
-    V = np.zeros(n_states)
+    V = np.zeros(env.n_states)
 
     for it in range(max_iterations):
-        # Policy Evaluation
+        # --- Policy Evaluation ---
         while True:
             delta = 0
-            for s in range(n_states):
-                if env.is_terminal(s):
+            for idx in range(env.n_states):
+                state = env.index_to_state(idx)
+                if env.is_terminal(state):
                     continue
-                v = V[s]
-                a = policy[s]
-                if a == 0:
-                    next_state = max(s - 1, 0)
-                else:
-                    next_state = min(s + 1, n_states - 1)
-                reward = env.get_reward(next_state)
-                V[s] = reward + gamma * V[next_state]
-                delta = max(delta, abs(v - V[s]))
+                v = V[idx]
+                a = policy[idx]
+                next_state, reward, done = env.simulate_step(state, a)
+                next_idx = env.state_to_index(next_state)
+                V[idx] = reward + gamma * V[next_idx]
+                delta = max(delta, abs(v - V[idx]))
             if delta < theta:
                 break
 
-        # Policy Improvement
+        # --- Policy Improvement ---
         policy_stable = True
-        for s in range(n_states):
-            if env.is_terminal(s):
+        for idx in range(env.n_states):
+            state = env.index_to_state(idx)
+            if env.is_terminal(state):
                 continue
-            old_action = policy[s]
+            old_action = policy[idx]
             action_values = []
             for a in env.action_space:
-                if a == 0:
-                    next_state = max(s - 1, 0)
-                else:
-                    next_state = min(s + 1, n_states - 1)
-                reward = env.get_reward(next_state)
-                action_values.append(reward + gamma * V[next_state])
+                next_state, reward, done = env.simulate_step(state, a)
+                next_idx = env.state_to_index(next_state)
+                action_values.append(reward + gamma * V[next_idx])
             best_action = np.argmax(action_values)
-            policy[s] = env.action_space[best_action]
-            if old_action != policy[s]:
+            policy[idx] = env.action_space[best_action]
+            if old_action != policy[idx]:
                 policy_stable = False
         if policy_stable:
             print(f"Policy iteration converged after {it+1} iterations.")
             break
+
     return policy, V

@@ -2,57 +2,55 @@ import numpy as np
 
 def value_iteration(env, gamma=0.99, theta=1e-6, max_iterations=1000):
     """
-    Perform Value Iteration for a given environment.
-
+    Perform Value Iteration for a generic environment with state-index mapping.
+    
     Args:
-        env: The environment object (must have reset(), step(), action_space, etc).
+        env: The environment object with methods:
+            - n_states (int)
+            - action_space (list)
+            - index_to_state(idx)
+            - state_to_index(state)
+            - is_terminal(state)
+            - simulate_step(state, action)
         gamma (float): Discount factor.
         theta (float): Convergence threshold.
         max_iterations (int): Maximum number of iterations.
-
+    
     Returns:
-        V (np.ndarray): Optimal value function.
-        policy (np.ndarray): Optimal policy.
+        V (np.ndarray): Optimal value function (array of shape [n_states]).
+        policy (np.ndarray): Optimal policy (best action for each state index, -1 for terminal).
     """
-    n_states = env.size
-    n_actions = len(env.action_space)
-    V = np.zeros(n_states)
-
+    V = np.zeros(env.n_states)
+    
     for i in range(max_iterations):
         delta = 0
-        for s in range(n_states):
-            if env.is_terminal(s):
+        for idx in range(env.n_states):
+            state = env.index_to_state(idx)
+            if env.is_terminal(state):
                 continue
-            v = V[s]
-            # For each action, calculate expected value
+            v = V[idx]
             action_values = []
             for a in env.action_space:
-                # Simulate the action
-                if a == 0:
-                    next_state = max(s - 1, 0)
-                else:
-                    next_state = min(s + 1, n_states - 1)
-                reward = env.get_reward(next_state)
-                action_values.append(reward + gamma * V[next_state])
-            V[s] = max(action_values)
-            delta = max(delta, abs(v - V[s]))
+                next_state, reward, done = env.simulate_step(state, a)
+                next_idx = env.state_to_index(next_state)
+                action_values.append(reward + gamma * V[next_idx])
+            V[idx] = max(action_values)
+            delta = max(delta, abs(v - V[idx]))
         if delta < theta:
             print(f"Value iteration converged after {i+1} iterations.")
             break
 
     # Extract policy
-    policy = np.zeros(n_states, dtype=int)
-    for s in range(n_states):
-        if env.is_terminal(s):
-            policy[s] = -1  # No action
+    policy = np.zeros(env.n_states, dtype=int)
+    for idx in range(env.n_states):
+        state = env.index_to_state(idx)
+        if env.is_terminal(state):
+            policy[idx] = -1  # No action
             continue
         action_values = []
         for a in env.action_space:
-            if a == 0:
-                next_state = max(s - 1, 0)
-            else:
-                next_state = min(s + 1, n_states - 1)
-            reward = env.get_reward(next_state)
-            action_values.append(reward + gamma * V[next_state])
-        policy[s] = np.argmax(action_values)
+            next_state, reward, done = env.simulate_step(state, a)
+            next_idx = env.state_to_index(next_state)
+            action_values.append(reward + gamma * V[next_idx])
+        policy[idx] = np.argmax(action_values)
     return V, policy
