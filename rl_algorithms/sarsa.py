@@ -219,7 +219,7 @@ def get_policy_from_q(Q, env):
             policy[state_idx] = env.action_space[np.argmax(Q[state_idx])]
     return policy
 
-def evaluate_policy(env, policy, episodes=100):
+def evaluate_policy(env, policy, episodes=100, max_steps=100):
     """
     Evaluate a policy by running multiple episodes.
     
@@ -227,6 +227,7 @@ def evaluate_policy(env, policy, episodes=100):
         env: Environment object
         policy (np.ndarray): Policy to evaluate
         episodes (int): Number of evaluation episodes
+        max_steps (int): Maximum number of steps per episode to avoid infinite loops
     
     Returns:
         avg_reward (float): Average reward per episode
@@ -240,7 +241,7 @@ def evaluate_policy(env, policy, episodes=100):
         total_reward = 0
         steps = 0
         
-        while not env.is_terminal(state):
+        while not env.is_terminal(state) and steps < max_steps:
             state_idx = env.state_to_index(state)
             action = policy[state_idx]
             
