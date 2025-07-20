@@ -1,1 +1,8 @@
+<<<<<<< HEAD
 numpy
+matplotlib
+seaborn
+tqdm
+=======
+numpy
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
