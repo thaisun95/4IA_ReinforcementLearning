@@ -22,6 +22,7 @@ class MontyHallV1:
         self.state = (0, -1, -1)
         self._winning_door = None
         self._revealed = None
+        self.action_space = [0, 1, 2]
 
     def state_to_index(self, state):
         return self.states.index(state)
