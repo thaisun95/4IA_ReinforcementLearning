@@ -3,8 +3,19 @@ import random
 
 class MontyHallV1:
     def __init__(self):
+<<<<<<< HEAD
         self.action_space = [0, 1, 2, 0, 1]  # 0/1/2=pick door, 0=stay, 1=switch (for step 1)
         # States: (step, chosen, remaining) where step=0 (choose), step=1 (stay/switch), step=2 (terminal)
+=======
+        """
+        Monty Hall environment (classic, 3 doors).
+        Steps:
+        - step=0: choose a door (action 0, 1, 2)
+        - step=1: choose stay (0) or switch (1)
+        - step=2: terminal state (reward revealed)
+        """
+        # States: (step, chosen, remaining)
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
         self.states = [(0, -1, -1)]
         for chosen in range(3):
             for remaining in range(3):
@@ -14,8 +25,13 @@ class MontyHallV1:
             self.states.append((2, chosen, -1))
         self.n_states = len(self.states)
         self.state = (0, -1, -1)
+<<<<<<< HEAD
         self._winning_door = None  # hidden from agent
         self._revealed = None      # door revealed by Monty
+=======
+        self._winning_door = None
+        self._revealed = None
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
 
     def state_to_index(self, state):
         return self.states.index(state)
@@ -32,12 +48,33 @@ class MontyHallV1:
     def is_terminal(self, state):
         return state[0] == 2
 
+<<<<<<< HEAD
     def simulate_step(self, state, action):
         # Use simulate_step for RL algorithms, does not modify self.state!
+=======
+    def get_valid_actions(self, state):
+        step, chosen, remaining = state
+        if step == 0:
+            return [0, 1, 2]
+        elif step == 1:
+            return [0, 1]   # 0=stay, 1=switch
+        else:
+            return []
+
+    def simulate_step(self, state, action):
+        """
+        Simulate a step from a given state and action without modifying self.state.
+        Returns: next_state, reward, done
+        """
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
         step, chosen, remaining = state
         if step == 0:
             chosen = action
             non_chosen = [d for d in range(3) if d != chosen]
+<<<<<<< HEAD
+=======
+            # Monty reveals a non-winning, non-chosen door
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
             if self._winning_door == chosen:
                 monty_opens = random.choice(non_chosen)
             else:
@@ -63,7 +100,13 @@ class MontyHallV1:
         return next_state, reward, done
 
     def step(self, action):
+<<<<<<< HEAD
         # Human/manual play, updates self.state
+=======
+        """
+        Manual play: updates self.state.
+        """
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
         step, chosen, remaining = self.state
         if step == 0:
             chosen = action
@@ -78,9 +121,15 @@ class MontyHallV1:
             reward = 0
             done = False
         elif step == 1:
+<<<<<<< HEAD
             if action == 0:  # stay
                 final_choice = chosen
             elif action == 1:  # switch
+=======
+            if action == 0:
+                final_choice = chosen
+            elif action == 1:
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
                 final_choice = remaining
             else:
                 raise ValueError("Invalid action for MontyHall step 1 (0=stay, 1=switch)")
@@ -95,7 +144,10 @@ class MontyHallV1:
         return next_state, reward, done
 
     def render(self):
+<<<<<<< HEAD
         # Pretty print state (for demo or manual play)
+=======
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
         step, chosen, remaining = self.state
         if step == 0:
             print("Step 1: Choose a door (0, 1, 2)")
@@ -106,7 +158,11 @@ class MontyHallV1:
             print(f"Final choice: door {chosen}")
             print(f"The winning door was: {self._winning_door}")
             if chosen == self._winning_door:
+<<<<<<< HEAD
                 print("You win! 🎉")
+=======
+                print("You win! ")
+>>>>>>> 79ea47c97567ca5f47a2c6286364e1e680df022e
             else:
                 print("You lose.")
         print()
