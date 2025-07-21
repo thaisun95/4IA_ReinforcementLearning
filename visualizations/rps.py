@@ -16,9 +16,9 @@ def visualize_rps_policy(env, policy, delay=0.8):
 
     move_map = {0: "Rock", 1: "Paper", 2: "Scissors", -1: "--"}
     ICONS = {
-        0: pygame.image.load("rock_icon.png"),
-        1: pygame.image.load("paper_icon.png"),
-        2: pygame.image.load("scissors_icon.png"),
+        0: pygame.image.load("images/rock_icon.png"),
+        1: pygame.image.load("images/paper_icon.png"),
+        2: pygame.image.load("images/scissors_icon.png"),
     }
     for v in ICONS.values():
         v = pygame.transform.scale(v, (60, 60))  # Resize for display
