@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 sys.path.append('.')
 
 from envs.line_world.line_world import LineWorld
-from rl_algorithms.q_learning import q_learning, get_policy_from_q, evaluate_policy
-from rl_algorithms.sarsa import sarsa, get_policy_from_q as sarsa_get_policy
-from rl_algorithms.expectedsarsa import expected_sarsa, get_policy_from_q as exp_sarsa_get_policy
+from rl_algorithms.temporal_forces.q_learning import q_learning, get_policy_from_q, evaluate_policy
+from rl_algorithms.temporal_forces.sarsa import sarsa, get_policy_from_q as sarsa_get_policy
+from rl_algorithms.temporal_forces.expectedsarsa import expected_sarsa, get_policy_from_q as exp_sarsa_get_policy
 
 def test_td_algorithms():
     """Test des trois algorithmes TD sur LineWorld"""
