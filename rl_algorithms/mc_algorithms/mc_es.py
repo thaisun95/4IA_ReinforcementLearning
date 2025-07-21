@@ -5,9 +5,12 @@ def mc_es(env, num_episodes=10000, gamma=0.99, max_steps_per_episode=None, verbo
     """
     Monte Carlo Exploring Starts (ES) Control.
     Compatible with state-dependent action spaces.
+
+    Pour chaque épisode : démarre d’un état/action aléatoire (exploring start),
+    puis joue aléatoirement jusqu’à la fin, et met à jour Q et la policy en greedy.
     """
     n_states = env.n_states
-    # 1. Compute all possible action indices for array dimensions
+    # 1. Récupère tous les indices d’actions possibles (pour la Q-table)
     all_actions = set()
     for idx in range(n_states):
         state = env.index_to_state(idx)
@@ -22,39 +25,39 @@ def mc_es(env, num_episodes=10000, gamma=0.99, max_steps_per_episode=None, verbo
 
     valid_episodes = 0
     for episode in range(num_episodes):
-        # Exploring starts: pick a non-terminal state and valid action
+        # 1. Exploring start : état/action aléatoire (hors terminal)
         non_terminal_states = [i for i in range(n_states) if not env.is_terminal(env.index_to_state(i))]
         state_idx = random.choice(non_terminal_states)
         state = env.index_to_state(state_idx)
         valid_actions = env.get_valid_actions(state)
         if not valid_actions:
-            continue  # skip states with no valid actions (should not happen)
+            continue
         action = random.choice(valid_actions)
         episode_list = []
 
         if hasattr(env, "state"):
             env.state = state
 
-        # Start the episode from (state, action)
+        # Premier pas (démarrage)
         next_state, reward, done = env.simulate_step(state, action)
         s_idx = env.state_to_index(state)
         episode_list.append((s_idx, action, reward))
         s_curr = next_state
         steps = 0
 
+        # 2. Continue exploration FULL RANDOM (pour garantir exploring starts)
         while not env.is_terminal(s_curr) and steps < max_steps_per_episode:
             s_idx = env.state_to_index(s_curr)
             valid_actions = env.get_valid_actions(s_curr)
             if not valid_actions:
                 break
-            a = policy[s_idx]
-            if a not in valid_actions:
-                a = random.choice(valid_actions)
+            a = random.choice(valid_actions)
             next_state, reward, done = env.simulate_step(s_curr, a)
             episode_list.append((s_idx, a, reward))
             s_curr = next_state
             steps += 1
 
+        # 3. Retourner la récompense et MAJ Q/policy
         if env.is_terminal(s_curr):
             valid_episodes += 1
             G = 0
@@ -65,7 +68,7 @@ def mc_es(env, num_episodes=10000, gamma=0.99, max_steps_per_episode=None, verbo
                 if (s_idx, a) not in visited:
                     N[s_idx, a] += 1
                     Q[s_idx, a] += (G - Q[s_idx, a]) / N[s_idx, a]
-                    # Update greedy policy among valid actions
+                    # Policy greedy parmi actions valides
                     valid_acts = env.get_valid_actions(env.index_to_state(s_idx))
                     if valid_acts:
                         best_a = valid_acts[np.argmax([Q[s_idx, x] for x in valid_acts])]
