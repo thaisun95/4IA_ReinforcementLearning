@@ -4,9 +4,7 @@ import random
 def mc_on_policy(env, num_episodes=10000, gamma=0.99, epsilon=0.1, max_steps_per_episode=None, verbose=False):
     """
     On-policy first-visit MC control for ε-soft policies (handles state-dependent actions).
-    Returns:
-        Q (np.ndarray): Action-value function.
-        policy (np.ndarray): Stochastic policy (n_states x n_actions)
+    Returns Q-table and final greedy policy (array of best action per state).
     """
     n_states = env.n_states
     all_actions = set()
@@ -17,7 +15,8 @@ def mc_on_policy(env, num_episodes=10000, gamma=0.99, epsilon=0.1, max_steps_per
 
     Q = np.zeros((n_states, n_actions))
     N = np.zeros((n_states, n_actions))
-    policy = np.ones((n_states, n_actions)) / n_actions  # default uniform
+    # For each state, initialize uniform ε-soft policy
+    policy_soft = np.ones((n_states, n_actions)) / n_actions
 
     if max_steps_per_episode is None:
         max_steps_per_episode = n_states * 2
@@ -33,6 +32,7 @@ def mc_on_policy(env, num_episodes=10000, gamma=0.99, epsilon=0.1, max_steps_per
             valid_actions = env.get_valid_actions(s)
             if not valid_actions:
                 break
+            # ε-soft policy sampling
             if random.random() < epsilon:
                 a = random.choice(valid_actions)
             else:
@@ -60,12 +60,29 @@ def mc_on_policy(env, num_episodes=10000, gamma=0.99, epsilon=0.1, max_steps_per
                         for act in range(n_actions):
                             if act in valid_acts:
                                 if act == best_a:
-                                    policy[s_idx, act] = 1 - epsilon + epsilon / len(valid_acts)
+                                    policy_soft[s_idx, act] = 1 - epsilon + epsilon / len(valid_acts)
                                 else:
-                                    policy[s_idx, act] = epsilon / len(valid_acts)
+                                    policy_soft[s_idx, act] = epsilon / len(valid_acts)
                             else:
-                                policy[s_idx, act] = 0
+                                policy_soft[s_idx, act] = 0
                     visited.add((s_idx, a))
     if verbose:
         print(f"Valid episodes (terminated): {valid_episodes}/{num_episodes}")
-    return Q, policy
+    # Extract final greedy policy for visualization
+    policy_greedy = extract_greedy_policy(Q, env)
+    return Q, policy_greedy
+
+def extract_greedy_policy(Q, env):
+    """Extract greedy policy from Q-table for given env (handles variable action sets)."""
+    n_states, n_actions = Q.shape
+    policy = np.zeros(n_states, dtype=int)
+    for idx in range(n_states):
+        state = env.index_to_state(idx)
+        valid_acts = env.get_valid_actions(state)
+        if valid_acts:
+            q_valid = [Q[idx, act] for act in valid_acts]
+            best_a = valid_acts[np.argmax(q_valid)]
+            policy[idx] = best_a
+        else:
+            policy[idx] = -1
+    return policy
